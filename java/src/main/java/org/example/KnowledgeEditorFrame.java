@@ -1,6 +1,8 @@
 package org.example;
 
 import javax.swing.*;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 import java.awt.*;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -13,6 +15,8 @@ public class KnowledgeEditorFrame extends JFrame {
     private final JTextArea outputArea = new JTextArea();
     private final Path kbPath;
     private String prologExecutable;
+    private boolean dirty = false;
+    private boolean suppressDirtyTracking = false;
 
     public KnowledgeEditorFrame(Path kbPath) {
         super("SWI-Prolog + Java Лабораторная");
@@ -27,6 +31,8 @@ public class KnowledgeEditorFrame extends JFrame {
         outputArea.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 14));
         outputArea.setEditable(false);
 
+        attachDirtyListener();
+
         JSplitPane splitPane = new JSplitPane(
                 JSplitPane.VERTICAL_SPLIT,
                 new JScrollPane(editorArea),
@@ -38,6 +44,31 @@ public class KnowledgeEditorFrame extends JFrame {
         setJMenuBar(buildMenuBar());
         loadFile();
         outputArea.append("SWI-Prolog executable: " + prologExecutable + "\n");
+    }
+
+    private void attachDirtyListener() {
+        editorArea.getDocument().addDocumentListener(new DocumentListener() {
+            @Override
+            public void insertUpdate(DocumentEvent e) {
+                markDirty();
+            }
+
+            @Override
+            public void removeUpdate(DocumentEvent e) {
+                markDirty();
+            }
+
+            @Override
+            public void changedUpdate(DocumentEvent e) {
+                markDirty();
+            }
+        });
+    }
+
+    private void markDirty() {
+        if (!suppressDirtyTracking) {
+            dirty = true;
+        }
     }
 
     private JMenuBar buildMenuBar() {
@@ -53,7 +84,7 @@ public class KnowledgeEditorFrame extends JFrame {
         open.addActionListener(e -> loadFile());
         save.addActionListener(e -> saveFile());
         configureProlog.addActionListener(e -> configurePrologExecutable());
-        close.addActionListener(e -> editorArea.setText(""));
+        close.addActionListener(e -> closeEditorContent());
         exit.addActionListener(e -> dispose());
 
         fileMenu.add(open);
@@ -70,7 +101,7 @@ public class KnowledgeEditorFrame extends JFrame {
 
         add.addActionListener(e -> editorArea.append("\n% Новый факт или правило.\n"));
         remove.addActionListener(e -> editorArea.replaceSelection(""));
-        change.addActionListener(e -> editorArea.replaceSelection("% Изменённый фрагмент"));
+        change.addActionListener(e -> editSelectedFragment());
 
         editMenu.add(add);
         editMenu.add(remove);
@@ -91,10 +122,10 @@ public class KnowledgeEditorFrame extends JFrame {
         JMenuItem about = new JMenuItem("О программе");
         about.addActionListener(e -> JOptionPane.showMessageDialog(
                 this,
-                "Демонстрационное приложение для лабораторной работы:\n" +
-                        "SWI-Prolog база знаний + Java GUI/Backend.\n\n" +
-                        "Если запросы не выполняются, проверьте путь к swipl\n" +
-                        "в меню Файл -> Настроить SWI-Prolog...",
+                "Демонстрационное приложение для лабораторной работы:\n"
+                        + "SWI-Prolog база знаний + Java GUI/Backend.\n\n"
+                        + "Если запросы не выполняются, проверьте путь к swipl\n"
+                        + "в меню Файл -> Настроить SWI-Prolog...",
                 "Справка",
                 JOptionPane.INFORMATION_MESSAGE
         ));
@@ -127,7 +158,6 @@ public class KnowledgeEditorFrame extends JFrame {
         }
     }
 
-
     private void askCustomQuery() {
         String input = JOptionPane.showInputDialog(
                 this,
@@ -140,6 +170,57 @@ public class KnowledgeEditorFrame extends JFrame {
         if (input != null && !input.isBlank()) {
             runQuery(input.trim());
         }
+    }
+
+    private void editSelectedFragment() {
+        String selected = editorArea.getSelectedText();
+        if (selected == null || selected.isBlank()) {
+            JOptionPane.showMessageDialog(
+                    this,
+                    "Сначала выделите факт или правило, которое хотите изменить.",
+                    "Изменить",
+                    JOptionPane.WARNING_MESSAGE
+            );
+            return;
+        }
+
+        String edited = (String) JOptionPane.showInputDialog(
+                this,
+                "Отредактируйте выделенный фрагмент:",
+                "Изменить",
+                JOptionPane.PLAIN_MESSAGE,
+                null,
+                null,
+                selected
+        );
+
+        if (edited != null) {
+            editorArea.replaceSelection(edited);
+        }
+    }
+
+    private void closeEditorContent() {
+        int choice = JOptionPane.showConfirmDialog(
+                this,
+                "Сохранить изменения перед очисткой редактора?",
+                "Закрыть",
+                JOptionPane.YES_NO_CANCEL_OPTION,
+                JOptionPane.QUESTION_MESSAGE
+        );
+
+        if (choice == JOptionPane.CANCEL_OPTION || choice == JOptionPane.CLOSED_OPTION) {
+            return;
+        }
+
+        if (choice == JOptionPane.YES_OPTION) {
+            saveFile();
+        }
+
+        suppressDirtyTracking = true;
+        editorArea.setText("");
+        suppressDirtyTracking = false;
+        dirty = false;
+        outputArea.append("Редактор очищен.\n");
     }
 
     private void configurePrologExecutable() {
@@ -170,7 +251,10 @@ public class KnowledgeEditorFrame extends JFrame {
     private void loadFile() {
         try {
             String text = Files.readString(kbPath, StandardCharsets.UTF_8);
+            suppressDirtyTracking = true;
             editorArea.setText(text);
+            suppressDirtyTracking = false;
+            dirty = false;
             outputArea.append("Открыт файл: " + kbPath + "\n");
         } catch (IOException ex) {
             outputArea.append("Не удалось открыть файл: " + ex.getMessage() + "\n");
@@ -180,6 +264,7 @@ public class KnowledgeEditorFrame extends JFrame {
     private void saveFile() {
         try {
             Files.writeString(kbPath, editorArea.getText(), StandardCharsets.UTF_8);
+            dirty = false;
             outputArea.append("Сохранено: " + kbPath + "\n");
         } catch (IOException ex) {
             outputArea.append("Не удалось сохранить файл: " + ex.getMessage() + "\n");
