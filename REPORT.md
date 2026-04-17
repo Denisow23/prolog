@@ -12,24 +12,39 @@
 flowchart TB
     Ilya --> Pavel
     Maria --> Pavel
+
     Pavel --> Aleksei
     Elena --> Aleksei
+    Pavel --> Karina
+    Elena --> Karina
+
     Aleksei --> Dmitriy
     Olga --> Dmitriy
+    Aleksei --> Egor
+    Olga --> Egor
+
     Dmitriy --> Nikolay
     Irina --> Nikolay
+
     Nikolay --> Sergey
     Tatiana --> Sergey
+
     Sergey --> Viktor
     Anna --> Viktor
+
     Viktor --> Andrey
     Sofia --> Andrey
+
     Andrey --> Roman
     Lidia --> Roman
+    Andrey --> Yana
+    Lidia --> Yana
+
     Roman --> Denis
     Natalia --> Denis
 ```
 
+В диаграмме явно добавлены ветви с братьями/сёстрами: `aleksei-karina`, `dmitriy-egor`, `roman-yana`.
 Глубина по линии `ilya -> ... -> denis` составляет 9 поколений (больше требуемых 8).
 
 ## 3. Семантическая сеть (рисунок)
@@ -55,8 +70,26 @@ flowchart TD
     two_wheeler --> motorcycle
     motorcycle --> sport_motorcycle
     sport_motorcycle --> yamaha_r1
+
+    %% Свойства классов
+    transport -.property.-> can_move
+    land_transport -.property.-> uses_land_routes
+    road_vehicle -.property.-> uses_roads
+    passenger_car -.property.-> carries_passengers
+    cargo_vehicle -.property.-> carries_cargo
+    sedan -.property.-> has_4_doors
+    electric_sedan -.property.-> uses_electricity
+    truck -.property.-> has_large_load_capacity
+    motorcycle -.property.-> has_handlebar_control
+    sport_motorcycle -.property.-> has_high_speed
+
+    %% Свойства экземпляров
+    tesla_model3 -.property.-> has_autopilot
+    volvo_fh16 -.property.-> has_sleeping_cabin
+    yamaha_r1 -.property.-> has_racing_mode
 ```
 
+В диаграмме показаны все элементы сети из базы: иерархия `is_a`, экземпляры `instance_of` и все свойства `property`.
 Ширина на уровне `road_vehicle` равна 3 (`passenger_car`, `cargo_vehicle`, `two_wheeler`).
 Глубина от `entity` до `tesla_model3` — 8 уровней.
 
