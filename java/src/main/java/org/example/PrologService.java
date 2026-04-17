@@ -18,7 +18,7 @@ public class PrologService {
     }
 
     public List<String> ask(String query) throws IOException, InterruptedException {
-        String goal = String.format("(%s), write('true'), nl, fail; write('false')", query);
+        String goal = String.format("(once(%s) -> writeln(true) ; writeln(false))", query);
 
         ProcessBuilder pb = new ProcessBuilder(
                 prologExecutable,
