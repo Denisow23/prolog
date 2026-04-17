@@ -12,10 +12,13 @@ public class KnowledgeEditorFrame extends JFrame {
     private final JTextArea editorArea = new JTextArea();
     private final JTextArea outputArea = new JTextArea();
     private final Path kbPath;
+    private String prologExecutable;
 
     public KnowledgeEditorFrame(Path kbPath) {
         super("SWI-Prolog + Java Лабораторная");
         this.kbPath = kbPath;
+        this.prologExecutable = detectDefaultPrologExecutable();
+
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setSize(1000, 700);
         setLocationRelativeTo(null);
@@ -34,6 +37,7 @@ public class KnowledgeEditorFrame extends JFrame {
 
         setJMenuBar(buildMenuBar());
         loadFile();
+        outputArea.append("SWI-Prolog executable: " + prologExecutable + "\n");
     }
 
     private JMenuBar buildMenuBar() {
@@ -42,16 +46,19 @@ public class KnowledgeEditorFrame extends JFrame {
         JMenu fileMenu = new JMenu("Файл");
         JMenuItem open = new JMenuItem("Открыть");
         JMenuItem save = new JMenuItem("Сохранить");
+        JMenuItem configureProlog = new JMenuItem("Настроить SWI-Prolog...");
         JMenuItem close = new JMenuItem("Закрыть");
         JMenuItem exit = new JMenuItem("Выход");
 
         open.addActionListener(e -> loadFile());
         save.addActionListener(e -> saveFile());
+        configureProlog.addActionListener(e -> configurePrologExecutable());
         close.addActionListener(e -> editorArea.setText(""));
         exit.addActionListener(e -> dispose());
 
         fileMenu.add(open);
         fileMenu.add(save);
+        fileMenu.add(configureProlog);
         fileMenu.add(close);
         fileMenu.addSeparator();
         fileMenu.add(exit);
@@ -81,7 +88,9 @@ public class KnowledgeEditorFrame extends JFrame {
         about.addActionListener(e -> JOptionPane.showMessageDialog(
                 this,
                 "Демонстрационное приложение для лабораторной работы:\n" +
-                        "SWI-Prolog база знаний + Java GUI/Backend.",
+                        "SWI-Prolog база знаний + Java GUI/Backend.\n\n" +
+                        "Если запросы не выполняются, проверьте путь к swipl\n" +
+                        "в меню Файл -> Настроить SWI-Prolog...",
                 "Справка",
                 JOptionPane.INFORMATION_MESSAGE
         ));
@@ -103,7 +112,7 @@ public class KnowledgeEditorFrame extends JFrame {
     private void runQuery(String query) {
         try {
             saveFile();
-            PrologService service = new PrologService(kbPath);
+            PrologService service = new PrologService(kbPath, prologExecutable);
             List<String> result = service.ask(query);
             outputArea.append("?- " + query + "\n");
             result.forEach(line -> outputArea.append(line + "\n"));
@@ -112,6 +121,31 @@ public class KnowledgeEditorFrame extends JFrame {
             outputArea.append("Ошибка: " + ex.getMessage() + "\n");
             outputArea.append("------------------------------\n");
         }
+    }
+
+    private void configurePrologExecutable() {
+        String newPath = JOptionPane.showInputDialog(
+                this,
+                "Введите команду или полный путь к SWI-Prolog (swipl):",
+                prologExecutable
+        );
+
+        if (newPath != null && !newPath.isBlank()) {
+            prologExecutable = newPath.trim();
+            outputArea.append("Новый путь SWI-Prolog: " + prologExecutable + "\n");
+        }
+    }
+
+    private String detectDefaultPrologExecutable() {
+        String fromEnv = System.getenv("SWIPL_PATH");
+        if (fromEnv != null && !fromEnv.isBlank()) {
+            return fromEnv.trim();
+        }
+        String os = System.getProperty("os.name", "").toLowerCase();
+        if (os.contains("win")) {
+            return "swipl.exe";
+        }
+        return "swipl";
     }
 
     private void loadFile() {

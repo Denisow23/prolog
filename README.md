@@ -14,15 +14,25 @@
 - `REPORT.md` — отчёт по лабораторной работе.
 
 ## Запуск
-1. Установить SWI-Prolog (команда `swipl` должна быть доступна в PATH).
-2. Собрать Java:
+1. Установить SWI-Prolog.
+2. Убедиться, что `swipl` доступен в PATH.
+   - Linux/macOS: обычно `/usr/bin/swipl`
+   - Windows: обычно `C:\Program Files\swipl\bin\swipl.exe`
+3. Собрать Java:
    ```bash
    javac -d out java/src/main/java/org/example/*.java
    ```
-3. Запустить приложение:
+4. Запустить приложение:
    ```bash
    java -cp out org.example.Main
    ```
+
+## Если приложение пишет «Cannot run program swipl»
+1. Откройте меню **Файл → Настроить SWI-Prolog...**.
+2. Укажите полный путь к исполняемому файлу `swipl`.
+3. Повторите запрос из меню **Вопросы**.
+
+Также можно задать путь через переменную окружения `SWIPL_PATH`.
 
 ## Пример запуска Prolog напрямую
 ```bash

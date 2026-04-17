@@ -10,23 +10,31 @@ import java.util.List;
 
 public class PrologService {
     private final Path knowledgeBasePath;
+    private final String prologExecutable;
 
-    public PrologService(Path knowledgeBasePath) {
+    public PrologService(Path knowledgeBasePath, String prologExecutable) {
         this.knowledgeBasePath = knowledgeBasePath;
+        this.prologExecutable = prologExecutable;
     }
 
     public List<String> ask(String query) throws IOException, InterruptedException {
         String goal = String.format("(%s), write('true'), nl, fail; write('false')", query);
 
         ProcessBuilder pb = new ProcessBuilder(
-                "swipl",
+                prologExecutable,
                 "-q",
                 "-s", knowledgeBasePath.toString(),
                 "-g", goal,
                 "-t", "halt"
         );
 
-        Process process = pb.start();
+        final Process process;
+        try {
+            process = pb.start();
+        } catch (IOException ex) {
+            throw new IOException(buildExecutableNotFoundMessage(ex), ex);
+        }
+
         int exitCode = process.waitFor();
 
         List<String> output = new ArrayList<>();
@@ -51,5 +59,13 @@ public class PrologService {
         }
 
         return output;
+    }
+
+    private String buildExecutableNotFoundMessage(IOException ex) {
+        return "Не удалось запустить SWI-Prolog ('" + prologExecutable + "').\n"
+                + "Укажите корректный путь к swipl в меню Файл -> Настроить SWI-Prolog...\n"
+                + "Пример для Windows: C:/Program Files/swipl/bin/swipl.exe\n"
+                + "Пример для Linux/macOS: /usr/bin/swipl\n"
+                + "Техническая причина: " + ex.getMessage();
     }
 }
