@@ -82,6 +82,10 @@ public class KnowledgeEditorFrame extends JFrame {
         questionsMenu.add(createQueryItem("Запрос 3: has_property(tesla_model3, uses_roads)", "has_property(tesla_model3, uses_roads)"));
         questionsMenu.add(createQueryItem("Запрос 4: member_of(yamaha_r1, transport)", "member_of(yamaha_r1, transport)"));
         questionsMenu.add(createQueryItem("Запрос 5: eco_friendly(volvo_fh16)", "eco_friendly(volvo_fh16)"));
+        questionsMenu.addSeparator();
+        JMenuItem customQuery = new JMenuItem("Произвольный запрос...");
+        customQuery.addActionListener(e -> askCustomQuery());
+        questionsMenu.add(customQuery);
 
         JMenu helpMenu = new JMenu("Справка");
         JMenuItem about = new JMenuItem("О программе");
@@ -120,6 +124,21 @@ public class KnowledgeEditorFrame extends JFrame {
         } catch (Exception ex) {
             outputArea.append("Ошибка: " + ex.getMessage() + "\n");
             outputArea.append("------------------------------\n");
+        }
+    }
+
+
+    private void askCustomQuery() {
+        String input = JOptionPane.showInputDialog(
+                this,
+                "Введите Prolog-запрос без '?-' и без точки в конце:\n"
+                        + "Пример: has_property(yamaha_r1, uses_roads)",
+                "Произвольный запрос",
+                JOptionPane.QUESTION_MESSAGE
+        );
+
+        if (input != null && !input.isBlank()) {
+            runQuery(input.trim());
         }
     }
 
