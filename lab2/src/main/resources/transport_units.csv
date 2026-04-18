@@ -1,0 +1,4 @@
+type,id,capacity,battery_kwh,x,y
+bus,BUS-01,45,,,
+cargo_van,VAN-01,1500,,,
+electric_bus,E-BUS-01,55,350,5,5
