@@ -87,16 +87,24 @@ flowchart TD
     tesla_model3 -.property.-> has_autopilot
     volvo_fh16 -.property.-> has_sleeping_cabin
     yamaha_r1 -.property.-> has_racing_mode
+
+    %% Перекрестные связи
+    electric_sedan -.uses_infrastructure.-> charging_station
+    heavy_truck -.serves.-> logistics_hub
+    truck -.serves.-> warehouse
+    sport_motorcycle -.used_on.-> race_track
+    sedan -.used_in.-> car_sharing_service
+    cargo_vehicle -.alternative_for.-> passenger_car
 ```
 
-В диаграмме показаны все элементы сети из базы: иерархия `is_a`, экземпляры `instance_of` и все свойства `property`.
+В диаграмме показаны все элементы сети из базы: иерархия `is_a`, экземпляры `instance_of`, свойства `property` и перекрестные связи `cross_relation`.
 Ширина на уровне `road_vehicle` равна 3 (`passenger_car`, `cargo_vehicle`, `two_wheeler`).
 Глубина от `entity` до `tesla_model3` — 8 уровней.
 
 ## 4. Разработанные факты и правила
 
 - Факты о поле (`male/1`, `female/1`) и родстве (`parent/2`).
-- Факты семантической сети: `instance_of/2`, `is_a/2`, `property/2`.
+- Факты семантической сети: `instance_of/2`, `is_a/2`, `property/2`, `cross_relation/3`.
 - Правила семейного дерева:
   - `father/2`, `mother/2`, `child/2`, `son/2`, `daughter/2`,
   - `sibling/2`, `brother/2`, `sister/2`, `grandparent/2`,
@@ -104,6 +112,7 @@ flowchart TD
 - Правила семантической сети:
   - `member_of/2`, `subclass_of/2` (рекурсивно),
   - `class_property/2`, `has_property/2`,
+  - `class_cross_relation/3`, `entity_cross_relation/3`, `entities_related/3`,
   - `is_transport/1`, `suitable_for_long_trip/1`, `eco_friendly/1`.
 
 ## 5. Примеры результатов
@@ -118,6 +127,8 @@ flowchart TD
 - `?- has_property(volvo_fh16, carries_cargo).` → `true` (через `heavy_truck -> truck -> cargo_vehicle`).
 - `?- member_of(yamaha_r1, transport).` → `true` (через цепочку суперклассов).
 - `?- eco_friendly(tesla_model3).` → `true` (через `uses_electricity`).
+- `?- entity_cross_relation(tesla_model3, charging_station, uses_infrastructure).` → `true` (перекрестная связь между ветками сети).
+- `?- entity_cross_relation(volvo_fh16, warehouse, serves).` → `true` (наследование перекрестной связи от `truck`).
 
 ## 6. Вывод
 В работе реализованы обе требуемые модели представления знаний на Prolog (родственные отношения и семантическая сеть), включая рекурсивный логический вывод и наследование свойств. Java-интерфейс обеспечивает редактирование базы знаний и выполнение типовых запросов через пункт меню «Вопросы», что демонстрирует интеграцию GUI и Prolog backend.

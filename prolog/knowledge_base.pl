@@ -132,6 +132,15 @@ property(tesla_model3, has_autopilot).
 property(volvo_fh16, has_sleeping_cabin).
 property(yamaha_r1, has_racing_mode).
 
+% перекрестные связи (cross-links) между ветками сети
+% cross_relation(Класс1, Класс2, ТипСвязи)
+cross_relation(electric_sedan, charging_station, uses_infrastructure).
+cross_relation(heavy_truck, logistics_hub, serves).
+cross_relation(truck, warehouse, serves).
+cross_relation(sport_motorcycle, race_track, used_on).
+cross_relation(sedan, car_sharing_service, used_in).
+cross_relation(cargo_vehicle, passenger_car, alternative_for).
+
 % -------- 9 правил для сети и вывода --------
 
 % экземпляр принадлежит классу напрямую
@@ -169,6 +178,31 @@ suitable_for_long_trip(Entity) :-
 % экологичный транспорт (например, электрический)
 eco_friendly(Entity) :- has_property(Entity, uses_electricity).
 
+% перекрестная связь для класса с учетом наследования
+class_cross_relation(Class, Other, Relation) :- cross_relation(Class, Other, Relation).
+class_cross_relation(Class, Other, Relation) :-
+    subclass_of(Class, Super),
+    cross_relation(Super, Other, Relation).
+class_cross_relation(Class, Other, Relation) :-
+    subclass_of(Other, SuperOther),
+    cross_relation(Class, SuperOther, Relation).
+
+% перекрестная связь для сущности (экземпляра)
+entity_cross_relation(Entity, Other, Relation) :-
+    member_of(Entity, Class),
+    class_cross_relation(Class, Other, Relation).
+
+% симметричный поиск перекрестных связей между двумя сущностями
+entities_related(Entity1, Entity2, Relation) :-
+    member_of(Entity1, Class1),
+    member_of(Entity2, Class2),
+    class_cross_relation(Class1, Class2, Relation).
+entities_related(Entity1, Entity2, Relation) :-
+    member_of(Entity1, Class1),
+    member_of(Entity2, Class2),
+    class_cross_relation(Class2, Class1, Relation).
+
+
 % ==============================================
 % Примеры запросов
 % ==============================================
@@ -185,3 +219,6 @@ eco_friendly(Entity) :- has_property(Entity, uses_electricity).
 % ?- member_of(yamaha_r1, transport).
 % ?- suitable_for_long_trip(tesla_model3).
 % ?- eco_friendly(tesla_model3).
+% ?- entity_cross_relation(tesla_model3, charging_station, uses_infrastructure).
+% ?- entity_cross_relation(volvo_fh16, warehouse, serves).
+% ?- entities_related(yamaha_r1, tesla_model3, Relation).
